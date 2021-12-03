@@ -4,7 +4,9 @@ void merge_sort(list *, int, int);
 void merge(list *, int, int, int);
 
 void merge_sort(list *b_list, int left, int right) {
+	
 	int mid;
+
 	if (left == right) {
 		return;
 	}
@@ -13,7 +15,6 @@ void merge_sort(list *b_list, int left, int right) {
 	merge_sort(b_list, left, mid);
 	merge_sort(b_list, mid + 1, right);
 	merge(b_list, left, mid, right);
-		
 }
 
 void merge(list *b_list, int left, int mid, int right) {
