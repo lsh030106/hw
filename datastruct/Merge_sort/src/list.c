@@ -39,11 +39,14 @@ list *newList(int argc, char **argv) {
 
 	li->head = head;
 	li->tail = tail;
-
-	for (int i = 1; i < argc; i++) {
-		appendNode(li, atoi(argv[i]));
+	
+	if (argc != 0 && argv != NULL) {
+		
+		for (int i = 1; i < argc; i++) {
+			appendNode(li, atoi(argv[i]));
+		}
 	}
-
+	
 	return li;
 }
 
