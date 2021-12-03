@@ -16,6 +16,7 @@ void errorHandle(const char *);
 void currNode(list *);
 void cleanUp(list *);
 void replaceNode(list *, int, int);
+void replaceFront(list *p_li, int t, int r);
 int indexData(list *, int);
 int appendNode(list *, int);
 int insertNode(list *, int, int);
@@ -44,6 +45,26 @@ list *newList(int argc, char **argv) {
 	}
 
 	return li;
+}
+
+void replaceFront(list *p_li, int t, int r) {
+	
+	node *ntargetHead;
+	node *nrepHead;
+	node *temp;
+	node *temp_;
+
+	ntargetHead = indexNode(p_li, t - 1);
+	nrepHead = indexNode(p_li, r - 1);
+	
+	temp = nrepHead->next;
+	nrepHead->next = nrepHead->next->next;
+
+	temp_ = ntargetHead->next;
+	
+	ntargetHead->next = temp;
+	temp->next = temp_;
+	
 }
 
 void replaceNode(list *p_li, int t, int r) {
@@ -107,9 +128,9 @@ int deleteNode(list *p_li, int idx) {
 
 node *indexNode(list *p_li, int idx) {
 	
-	node *temp = p_li->head->next;
+	node *temp = p_li->head;
 
-	for (int i = 0; i < idx - 1; i++) {
+	for (int i = 0; i < idx + 1; i++) {
 		temp = temp->next;
 		if (temp == NULL) {
 			return NULL;

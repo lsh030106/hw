@@ -22,3 +22,4 @@ int deleteNode(list *, int idx);
 node *indexNode(list *, int idx);
 list *newList(int, char **);
 void replaceNode(list *, int, int);
+void replaceFront(list *, int, int);
