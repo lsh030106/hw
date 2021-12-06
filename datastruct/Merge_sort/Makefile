@@ -15,4 +15,4 @@ $(TARGET) : $(OBJECTS)
 	$(CC) -o $(TARGET) $(OBJECTS) -g
 
 clean:
-	rm -f $(OBJECTS) $(TARGET)
+	rm -f $(OBJECTS) $(TARGET) varset/Result_set.txt
