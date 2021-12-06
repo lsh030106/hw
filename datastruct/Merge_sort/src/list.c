@@ -130,6 +130,7 @@ int deleteNode(list *p_li, int idx) {
 	return 1;
 }
 
+// Need to add other algorithm 
 node *indexNode(list *p_li, int idx) {
 	
 	node *temp = p_li->head;

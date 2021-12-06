@@ -3,6 +3,7 @@
 void merge_sort(list *, int, int);
 void merge(list *, int, int, int);
 
+// try using thread pool later on
 void merge_sort(list *b_list, int left, int right) {
 	
 	int mid;
