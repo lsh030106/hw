@@ -25,6 +25,7 @@ void merge(list *b_list, int left, int mid, int right) {
 	
 	while (Lleft <= mid && Rleft <= right) {
 		
+		// try using next node pointer, use index overhead is too big 
 		if (indexData(b_list, Lleft) >= indexData(b_list, Rleft)) {
 
 			replaceFront(b_list, Lleft++, Rleft++);
