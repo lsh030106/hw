@@ -1,0 +1,73 @@
+Shadow Wall
+
+DHCP
+
+	- Dynamic Host Configuration Protocol
+
+	- 호스트의 IP주소와 TCP/IP 프로토콜의 기본 설정을 클라이언트에게 자동으로 제공(IP 충돌 예방)
+
+	- DHCP server 에 의존적
+	
+	- 동작 원리
+		
+		1. DHCP Discover
+			HOST -> DHCP; broadcast를 통해 IP 주소 할당을 요청
+
+		2. DHCP Offer
+			DHCP -> HOST; broadcast or unicast를 통해 네트워크 할당 요청을 DHCP server 가 받
+			아 응답
+
+		3. DHCP Request
+			HOST -> DHCP; broadcast 로 HOST가 받은 IP 주소를 사용하겠다고 확정을 받기위함
+
+		4. DHCP Ack
+			DHCP -> HOST; broadcast or unicast, Request 메세지 내의 Broadcast Flag=1 일 시
+			Broadcast, 0이면 Unicast/ HOST의 MAC에 매칭이되는 IP 주소와 gateway 주소를 확정
+	- lease
+		IP 주소가 일정 시간동안만 유효하도록 해 네트워크를 동적으로 재구성 가능
+	
+	- RFC 문서에 표준이 정의되어 있음
+
+
+Shadow Wall 에서 사용
+
+	1. 방화벽 -> 네트워크 설정 -> DHCP에 위치
+
+	2. 인터페이스를 할당해야 사용가능, 서브넷은 할당한 인터페이스의 범위를 넘어서는 안됨
+
+	2-1. 방화벽 -> 네트워크 설정 -> 이더넷에서 추가 가능
+
+	3. 1차 네임서버 : 168.126.63.1(KT olleh) / 2차 네임서버 : 8.8.8.8(google)
+
+	- lease 한 IP 주소와 lease 시작 시간, 종료 시간, MAC 주소, host이름을 확인가능
+
+ 	
+Windows10 에서 DHCP client 작동
+
+	0. VM 이라면 네트워크 설정 -> 어댑터에 브리지 -> 해당하는 인터페이스 선택
+
+	1. 네트워크 및 인터넷 설정 -> 이더넷 -> IP 설정 -> 편집 -> DHCP 자동
+	
+
+Ubuntu 16.04 에서 DHCP client 작동
+
+	1. ip a (ip address)로 interface 확인 
+
+	2. /etc/network/interfaces 에서 해당 인터페이스 dhcp 로 수정
+
+	2-1 수동으로 할당할때도 해당 interfaces.d 를 수정 ex) iface enp0s3 inet static ... 
+	
+	3. systemctl restart networking 으로 해당 서비스 systemd 를 재시작
+
+	4. ip r (ip route) 로 gateway, network address, ip address, interface 확인
+
+	4-1. 일시적으로 변경할 때
+
+		- ifconfig <interface> <ip address> : 해당 인터페이스 IP address 변경
+			reboot 나 systemd를 재시작할 시 eth0의 설정 파일 (interfaces.d)로 ip 가 변경
+			ifconfig <interface> <ip address> netmask <netmask> broadcast <broadcast> 도 가능
+			ifconfig <interface> 의 up과 down은 각각 해당 인터페이스를 연결 | 해제 다
+			Network Interface Card (NIC)의 설정파일을 수정해야만 설정 영구적으로 저장가능
+			
+		- 현재 인터페이스가 정적으로 할당되어 있으나 DHCP 서버 네트워크에 연결된 상태라면
+			dhclient <interface> 로 IP 주소를 할당 받을 수 있음
