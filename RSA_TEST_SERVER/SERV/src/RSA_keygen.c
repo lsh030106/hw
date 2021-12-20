@@ -13,7 +13,10 @@ BIO *stdout_bio = NULL;
 
 void closefiles(void);
 
-int openfiles(void) {
+int openfiles(char *IP) {
+    
+    char pub[64];
+    char pri[64];
 
     stdout_bio = BIO_new(BIO_s_file());
 
@@ -29,12 +32,14 @@ int openfiles(void) {
         return -1;
     }
 
-    if (BIO_write_filename(publickey_bio, "./Publickey.pem") <= 0) {
+    sprintf(pub, "public/%s.pem", IP);
+    if (BIO_write_filename(publickey_bio, pub) <= 0) {
         closefiles();
         return -1;
     }
-
-    if (BIO_write_filename(privatekey_bio, "./privatekey.pem") <= 0) {
+    
+    sprintf(pri, "private/%s.pem", IP);
+    if (BIO_write_filename(privatekey_bio, pri) <= 0) {
         closefiles();
         return -1;
     }
@@ -77,10 +82,16 @@ void closefiles(void) {
 
 RSA *gen_key(int key_len) {
     RAND_status();
-    return RSA_generate_key(key_len, RSA_F4, NULL, NULL);
+    BIGNUM *bn = BN_new();
+    RSA *rsa = RSA_new();
+    BN_set_word(bn, RSA_F4);
+ 
+    RSA_generate_key_ex(rsa, key_len, bn, NULL);
+     
+    return rsa;
 }
 
-int main(int argc, char ** argv) {
+int make_key(char *IP) {
     int i = 0;
     RSA *rsa = NULL;
 
@@ -89,7 +100,7 @@ int main(int argc, char ** argv) {
     rsa = gen_key(key_len);
 
     if (rsa) {
-        if (openfiles() == 0) {
+        if (openfiles(IP) == 0) {
             writefiles(rsa);
             closefiles();
         }
