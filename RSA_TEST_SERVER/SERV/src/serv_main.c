@@ -7,16 +7,40 @@
 #include <unistd.h>
 #include <stdlib.h>
 
+#include "AES_CR.h" // AES 128 ecb key 파일 읽고 암복호화, 파라미터는 파일이름
+#include "AES_keygen.h" // AES 128 ecb key 생성 함수
+#include "RSA_CR.h" // RSA 암복호화 파라미터는 마찬가지로 파일이름
+#include "RSA_keygen.h" // RSA 키 생성함수
+
 #define SERVER_PORT 10000
 #define DEFAULT 2048
 #define LIMIT 1024
 #define EXIT "q\n"
 
+/*
+ 소켓들은 IP 로 구분하며 IP 별 1회 인증, 사용자 본인인증은 클라이언트 프로그램에서 자체적으로 로그인을 해 확인한다.
+ 서버는 클라이언트의 Public key 만을 .pem 파일로 저장하며 pem파일의 이름은 상대방의 IP 주소,
+ 즉, 로그인 인증(AES ECB 암호화), RSA IKE, 공유키교환, IP 확인 4개의 인증이 있으며 하나라도
+ 일치하지 않을 시 이용이 제한된다
+
+ 모두 서버에 접속은 되지만 채팅은 인증이 완료된 사람에게만 보이게 했다
+ 마치 vlan처럼 같은 공간에 있지만 다른 공간으로 인식하게 했다
+ 하지만 인증되지 않은 사람이 많이 모인다면 서버가 혼잡해질 가능성이 다분하므로 
+ 총 4개의 배열을 이용한다
+
+ 접속 대기중인 소켓의 배열, 인증이 완료된 소켓의 배열, 접속 중인 소켓의 배열, 접속된 소켓의 IP
+ 이 네가지의 배열을 이용해 서버의 우선순위를 정한다 
+ 서버의 모델은 selete 모델이며 쓰레드풀을 쓰기엔 시간이 너무 걸려 select를 선택했다
+ */
+
+
 void indicerr(char *);
+int generate_key(void);
 
 int main(void) {
 	int servfd, clntfd, sockfd, maxfd;
-	int wclntarr[LIMIT];	// 접속 대기중인 소켓의 배열
+	char *wclntarr[12];	// 접속 대기중인 소켓의 배열
+    int rclntarr[LIMIT];    // 인증 완료한 소켓의 배열
 	int clntarr[LIMIT];    // 접속 중인 소켓의 배열
     char *iparr[12]; // 접속 된 소켓의 IP
     int sockcnt = 0;
@@ -71,6 +95,8 @@ int main(void) {
 	FD_ZERO(&readfd);
 	FD_SET(0, &readfd);
 	FD_SET(servfd, &readfd);
+    
+    printf("start server...\n");
 
 	while (1) {
 		valfd = readfd;
@@ -115,13 +141,13 @@ int main(void) {
             // wait queue 에 클라이언트를 차례로 넣는다
 			for (sockcnt = 0; sockcnt < LIMIT; sockcnt++) {
 
-				if (wclntarr[sockcnt] < 0) {
-					wclntarr[sockcnt] = clntfd;
+				if (clntarr[sockcnt] < 0) {
+					clntarr[sockcnt] = clntfd;
+                    wclntarr[clntfd] = iparr[clntfd];
 					break;
 				}
 			}
 		
-
 			if (sockcnt == LIMIT) {
 				indicerr("too many client");
 			}
@@ -140,7 +166,8 @@ int main(void) {
 				continue;
 			}
 		}
-			
+
+        
 		// 클라이언트 접속 종료 예외 처리
         for (sockcnt = 0; sockcnt <= clntmax; sockcnt++) {
 	
@@ -190,10 +217,10 @@ int main(void) {
             
             // wait queue에서 대기중인 클라이언트
             if (sockfd == wclntarr[sockcnt]) {
-                char *protocol = NULL;
+                /*char **protocol = NULL;
 
-                char *temp = strtock_s(sendbuf, "$$", protocol);
-                // $$ 앞의 문자열으로 단계를 4단계로 나누어 handshake 한다
+                char *temp = strtok_r(sendbuf, ":", protocol);
+                // : 앞의 문자열으로 단계를 4단계로 나누어 handshake 한다*/
             }
 
 
@@ -213,3 +240,10 @@ int main(void) {
 void indicerr(char *msg) {
 	fprintf(stderr, "%s : %s\n", msg, strerror(errno));
 }
+
+int generate_key(void) {
+    /* 서버 첫 시작 시 비대칭키와 공유키를 생성 후 해당 pem, key  파일 존재 시
+       새로 생성하지 않고 가져오기만 한다
+       */
+}
+
