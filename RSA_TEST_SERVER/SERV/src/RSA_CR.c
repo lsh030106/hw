@@ -12,7 +12,7 @@
 int public_enc(unsigned char *msg, unsigned char *Ct, const char *filename);
 int private_dec(unsigned char *Ct, unsigned char *Pt, const char *filename);
 
-int main(void) {
+/*int main(void) {
     unsigned char Ct2[KEYLEN];
     unsigned char Pt[KEYLEN];
     unsigned char msg[] = "test rsa test";
@@ -27,7 +27,7 @@ int main(void) {
     BIO_dump_fp(stdout, Pt, ptlen);
     printf("%s\n", Pt);
     return 0;
-}
+}*/
 
 int public_enc(unsigned char *msg, unsigned char *Ct, const char *filename) {
     

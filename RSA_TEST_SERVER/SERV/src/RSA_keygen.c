@@ -7,11 +7,15 @@
 #include <openssl/pem.h>
 #include <openssl/rand.h>
 
+#include <fcntl.h>
+#include <unistd.h>
+
 BIO *publickey_bio = NULL;
 BIO *privatekey_bio = NULL;
 BIO *stdout_bio = NULL;
 
 void closefiles(void);
+char *RSA_pubkey_read(const char *filename, char *buffer);
 
 int openfiles(char *IP) {
     
@@ -63,6 +67,8 @@ int writefiles(RSA *rsa) {
     if (! PEM_write_bio_RSAPrivateKey(privatekey_bio, rsa, NULL, NULL, 0, NULL, NULL)) {
         return -1;
     }
+
+    return 0;
 }
 
 void closefiles(void) {
@@ -92,7 +98,6 @@ RSA *gen_key(int key_len) {
 }
 
 int make_key(char *IP) {
-    int i = 0;
     RSA *rsa = NULL;
 
     int key_len = 2048;
@@ -109,3 +114,43 @@ int make_key(char *IP) {
     }
     return 0;
 }
+
+char *RSA_pubkey_read(const char *filename, char *buffer) {
+    int fd, temp;
+
+    fd = open(filename, O_RDONLY);
+    if (fd == -1) {
+        fprintf(stderr, "file : %s, error : %s\n", filename, strerror(errno));
+        return NULL;
+    }
+
+    temp = read(fd, buffer, 1024);
+    if (temp == -1) {
+        fprintf(stderr, "file : %s, error : %s\n", filename, strerror(errno));
+        return NULL;
+    }
+    
+    close(fd);
+    return buffer;
+}
+
+char *RSA_pubkey_write(const char *filename, char *buffer) {
+    int fd, temp;
+
+    fd = open(filename, O_WRONLY | O_CREAT);
+    if (fd == -1) {
+        fprintf(stderr, "file : %s, error : %s\n", filename, strerror(errno));
+        return NULL;
+    }
+
+    temp = write(fd, buffer, 1024);
+    if (temp == -1) {
+        fprintf(stderr, "file : %s, error : %s\n", filename, strerror(errno));
+        return NULL;
+    }
+
+    close(fd);
+    return buffer;
+}
+
+

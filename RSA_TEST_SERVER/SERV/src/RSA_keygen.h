@@ -7,13 +7,11 @@
 #include <openssl/pem.h>
 #include <openssl/rand.h>
 
-BIO *publickey_bio = NULL;
-BIO *privatekey_bio = NULL;
-BIO *stdout_bio = NULL;
-
 void closefiles(void);
 int openfiles(char *);
 int writefiles(RSA *);
 void closefiles(void);
 RSA *gen_key(int);
 int make_key(char *keyname);
+char *RSA_pubkey_read(const char *filename, char *buffer);
+char *RSA_pubkey_write(const char *filename, char *buffer);
