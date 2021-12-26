@@ -8,7 +8,7 @@
 #include <fcntl.h>
 #include <pthread.h>
 
-#include "RSA_keygen.h"
+//#include "RSA_keygen.h"
 
 #ifdef WIN32
     #define OS "WIN32"
@@ -26,7 +26,11 @@
 #define SYM "SYM"
 #define MSG "MSG"
 #define OKL "OKL"
+#define EXT "EXT"
 #define DEFAULT 1024
+#define PORT 10000
+
+int loop = 1;
 
 struct thread_info {
     pthread_t thread_id;
@@ -41,6 +45,7 @@ struct thread_buf {
 };
 
 int cat_header(char *sendbuf, const char *header, char *payload);
+int start_client(void);
 
 int main(void) {
     struct thread_buf buf;
@@ -48,12 +53,14 @@ int main(void) {
 
     cat_header(buf.sendbuf, OKL, (char *)OS);
     printf("%s\n", buf.sendbuf);
+    start_client();
+
     return 0;
 }
 
 // MT-safe 함수들만 사용, mutex는 필요 없음
 void *recv_thread(void *arg) {
-    struct thread_info *tinfo = (thread_info *)arg;
+    struct thread_info *tinfo = (struct thread_info *)arg;
     struct thread_buf buf;
     memset(&buf, 0, sizeof(buf));
     char *next_ptr;
@@ -66,15 +73,19 @@ void *recv_thread(void *arg) {
        현재 플랫폼 종류를 송신
      */
     cat_header(buf.sendbuf, OKL, (char *)OS);
-    len = write(tinfo->servsock, buf.sendbuf, DEFAULT); 
+    //len = write(tinfo->servsock, buf.sendbuf, sizeof(buf.sendbuf)); 
 
-    while (1) {
+    while (loop) {
         memset(&buf, 0, sizeof(buf));
-
+        
+        if (! loop) {
+            pthread_exit((void *)retval);
+        }
+        
         len = read(tinfo->servsock, buf.recvbuf, DEFAULT);
         if (len < 0) {
             fprintf(stderr, "%s", strerror(errno));
-            continue;
+            break;
         }
 
         header = strtok_r(buf.recvbuf, ":", &next_ptr);
@@ -89,22 +100,22 @@ void *recv_thread(void *arg) {
             header = strtok_r(NULL, ":", &next_ptr);
             buf.payload = header;
             
-            retval = RSA_pubkey_write("public/%s.pem", buf.payload);
+            /*retval = RSA_pubkey_write("public/%s.pem", buf.payload);
             if (retval == NULL) {
                 printf("fail store server pubkey...\n");
                 retval = strerror(errno);
                 pthread_exit((void *)retval);
-            }
+            }*/
             /*
             간단한 세션과 세션키의 정의
             프로그램 사이에서 서로를 인식해  통신을 시작하고 마치기까지 기간을 세션이라고 함
             세션키는 하나의 통신 세션 동안에만 사용하는 암호화 임시 키
-             */
-
-            
+             */        
         }
+        printf("%s\n", buf.recvbuf);
 
     }
+    pthread_exit((void *)retval);
 }
 
 int cat_header(char *sendbuf, const char *header, char *payload) {
@@ -117,8 +128,67 @@ int cat_header(char *sendbuf, const char *header, char *payload) {
 
     return 0;
 }
-/*
-int start_client(void) {
 
+int start_client() {
+    struct thread_buf buf;
+    const unsigned short port = PORT;
+    int servsock;
+    int temp;
+    struct sockaddr_in serv_addr;
+
+    servsock = socket(PF_INET, SOCK_STREAM, 0);
+
+    if (servsock == -1) {
+        fprintf(stderr, "socket open error : %s\n", strerror(errno));
+        return -1;
+    }
+
+    memset(&serv_addr, 0, sizeof(serv_addr));
+
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_addr.s_addr = inet_addr("172.30.1.16");
+    serv_addr.sin_port = htons(port);
+
+    temp = connect(servsock, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
+    if (temp == -1) {
+        fprintf(stderr, "connect error : %s\n", strerror(errno));
+        close(servsock);
+        return -1;
+    }
+
+    struct thread_info thr_info;
+    memset(&thr_info, 0, sizeof(thr_info));
+    
+    int thr_id = 0;
+    void *status = NULL;
+    thr_info.servsock = servsock;
+    
+    thr_id = pthread_create(&thr_info.thread_id, NULL, recv_thread, (void *)&thr_info);
+    if (thr_id != 0) {
+        fprintf(stderr, "thread create error : %s\n", strerror(errno));
+        close(servsock);
+        return -1;
+    }
+    
+    while (1) {
+        if (memset(buf.sendbuf, 0, DEFAULT) == NULL) {
+            fprintf(stderr, "%s\n", strerror(errno));
+            break;
+        }
+
+        fgets(buf.sendbuf, DEFAULT, stdin);
+        
+        if (strcmp(buf.sendbuf, "q\n") == 0 || strcmp(buf.sendbuf, "Q\n") == 0) {
+            loop = 0;
+            break;
+        }
+
+        write(servsock, buf.sendbuf, strlen(buf.sendbuf));
+    }
+    printf("df\n"); 
+    pthread_join(thr_info.thread_id, &status);
+    printf("%d\n", *((int *)status));
+
+    close(servsock);
     return 0;
-}*/
+}
