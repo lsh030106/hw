@@ -16,7 +16,6 @@ int euckr2utf8(char *source, char *dest, int dest_size) {
         return(-1);
     iconv_close(it);
     return(pout - dest);
-    /* return(out_size); */
 }
  
 int utf82euckr(char *source, char *dest, int dest_size) {
@@ -32,5 +31,4 @@ int utf82euckr(char *source, char *dest, int dest_size) {
         return(-1);
     iconv_close(it);
     return(pout - dest);
-    /* return(out_size); */
 }

@@ -14,4 +14,4 @@ void closefiles(void);
 RSA *gen_key(int);
 int make_key(char *keyname);
 char *RSA_pubkey_read(const char *filename, char *buffer);
-char *RSA_pubkey_write(const char *filename, char *buffer);
+char *RSA_pubkey_write(const char *filename, char *buffer, int len);

@@ -8,7 +8,12 @@
 #include <fcntl.h>
 #include <pthread.h>
 
-//#include "RSA_keygen.h"
+#include "AES_CTR_keygen.h"
+#include "RSA_keygen.h"
+#include "RSA_CR.h"
+#include "BASE_64.h"
+#include "euc2utf.h"
+#include "AES_CTR_CR.h"
 
 #ifdef WIN32
     #define OS "WIN32"
@@ -31,6 +36,8 @@
 #define PORT 10000
 
 int loop = 1;
+int authen = 0;
+unsigned char *g_key;
 
 struct thread_info {
     pthread_t thread_id;
@@ -48,11 +55,7 @@ int cat_header(char *sendbuf, const char *header, char *payload);
 int start_client(void);
 
 int main(void) {
-    struct thread_buf buf;
-    memset(&buf, 0, sizeof(buf));
 
-    cat_header(buf.sendbuf, OKL, (char *)OS);
-    printf("%s\n", buf.sendbuf);
     start_client();
 
     return 0;
@@ -64,8 +67,9 @@ void *recv_thread(void *arg) {
     struct thread_buf buf;
     memset(&buf, 0, sizeof(buf));
     char *next_ptr;
-    char *retval;
+    char *retval = NULL;
     char *header;
+    unsigned char ct[DEFAULT] = {0,};
     int len;
     
     /*
@@ -73,7 +77,7 @@ void *recv_thread(void *arg) {
        현재 플랫폼 종류를 송신
      */
     cat_header(buf.sendbuf, OKL, (char *)OS);
-    //len = write(tinfo->servsock, buf.sendbuf, sizeof(buf.sendbuf)); 
+    len = write(tinfo->servsock, buf.sendbuf, strlen(buf.sendbuf)); 
 
     while (loop) {
         memset(&buf, 0, sizeof(buf));
@@ -87,7 +91,6 @@ void *recv_thread(void *arg) {
             fprintf(stderr, "%s", strerror(errno));
             break;
         }
-
         header = strtok_r(buf.recvbuf, ":", &next_ptr);
          
         /*
@@ -100,18 +103,53 @@ void *recv_thread(void *arg) {
             header = strtok_r(NULL, ":", &next_ptr);
             buf.payload = header;
             
-            /*retval = RSA_pubkey_write("public/%s.pem", buf.payload);
+            retval = RSA_pubkey_write("public/serv_key.pem", buf.payload,
+                    len - 4);
             if (retval == NULL) {
                 printf("fail store server pubkey...\n");
                 retval = strerror(errno);
                 pthread_exit((void *)retval);
-            }*/
+            }
             /*
             간단한 세션과 세션키의 정의
             프로그램 사이에서 서로를 인식해  통신을 시작하고 마치기까지 기간을 세션이라고 함
             세션키는 하나의 통신 세션 동안에만 사용하는 암호화 임시 키
+            
+            공개키를 받고 자신의 sym key를 전송
              */        
+            memset(&buf.payload, 0, sizeof(buf.payload));
+            
+            unsigned char *key = NULL;
+            unsigned char *iv = NULL;
+            gen_aes_ctr_key(&key, &iv); 
+            
+            g_key = key;
+            //char *BASE64 = NULL;
+            int cplen = public_enc(key, ct, 
+                    "public/serv_key.pem");
+            
+            if (cplen == 0) {
+                fprintf(stderr, "%s\n", strerror(errno));
+            }
+            //base64Encode((char *)ct, &BASE64);
+            
+            cat_header(buf.sendbuf, SYM, (char *)ct);
+            printf("%s\n", buf.sendbuf);
+            len = write(tinfo->servsock, buf.sendbuf, 260);
+
         }
+        
+        if (! (strcmp(header, OKL))) {
+            authen = 1;
+        }
+
+        // recv message 
+        if (! (strcmp(header, MSG))) {
+            header = strtok_r(NULL, ":", &next_ptr);
+            buf.payload = header;
+            printf("%s\n", buf.payload);
+        }
+
         printf("%s\n", buf.recvbuf);
 
     }
@@ -146,7 +184,7 @@ int start_client() {
     memset(&serv_addr, 0, sizeof(serv_addr));
 
     serv_addr.sin_family = AF_INET;
-    serv_addr.sin_addr.s_addr = inet_addr("172.30.1.16");
+    serv_addr.sin_addr.s_addr = inet_addr("10.10.0.119");
     serv_addr.sin_port = htons(port);
 
     temp = connect(servsock, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
@@ -170,22 +208,28 @@ int start_client() {
         return -1;
     }
     
+    while (! authen) {};
+    unsigned char *CT = {0,};
+    unsigned char iv[] = "aaaa";
+    int cp_length = 0;
     while (1) {
         if (memset(buf.sendbuf, 0, DEFAULT) == NULL) {
             fprintf(stderr, "%s\n", strerror(errno));
             break;
         }
-
+        
         fgets(buf.sendbuf, DEFAULT, stdin);
         
         if (strcmp(buf.sendbuf, "q\n") == 0 || strcmp(buf.sendbuf, "Q\n") == 0) {
             loop = 0;
             break;
         }
-
-        write(servsock, buf.sendbuf, strlen(buf.sendbuf));
+        
+        
+        cp_length = aes_ctr_encrypt(g_key, iv, (unsigned char *)buf.sendbuf, &CT);
+        cat_header(buf.recvbuf, MSG, (char *)CT);
+        write(servsock, buf.recvbuf, cp_length);
     }
-    printf("df\n"); 
     pthread_join(thr_info.thread_id, &status);
     printf("%d\n", *((int *)status));
 

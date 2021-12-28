@@ -134,16 +134,16 @@ char *RSA_pubkey_read(const char *filename, char *buffer) {
     return buffer;
 }
 
-char *RSA_pubkey_write(const char *filename, char *buffer) {
+char *RSA_pubkey_write(const char *filename, char *buffer, int len) {
     int fd, temp;
 
-    fd = open(filename, O_WRONLY | O_CREAT);
+    fd = open(filename, O_WRONLY | O_CREAT, 00777);
     if (fd == -1) {
         fprintf(stderr, "file : %s, error : %s\n", filename, strerror(errno));
         return NULL;
     }
 
-    temp = write(fd, buffer, 1024);
+    temp = write(fd, buffer, len);
     if (temp == -1) {
         fprintf(stderr, "file : %s, error : %s\n", filename, strerror(errno));
         return NULL;

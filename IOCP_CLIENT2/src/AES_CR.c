@@ -66,7 +66,8 @@ unsigned char * symkey(const char *filename, int flag, unsigned char *txt, unsig
             return NULL;
         }
 
-        error = EVP_EncryptUpdate(ctx, &ct[ctlen], &num_byte, &txt[ctlen], (int)strlen((unsigned char *)txt));
+        error = EVP_EncryptUpdate(ctx, &ct[ctlen], &num_byte, &txt[ctlen], 
+                (int)strlen((char *)txt));
         if (error == 0) {
             err = ERR_get_error();
             printf("%s\n", ERR_error_string(err, NULL));

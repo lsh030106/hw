@@ -12,22 +12,22 @@
 int public_enc(unsigned char *msg, unsigned char *Ct, const char *filename);
 int private_dec(unsigned char *Ct, unsigned char *Pt, const char *filename);
 
-/*int main(void) {
-    unsigned char Ct2[KEYLEN];
+int main(void) {
+    unsigned char Ct2[KEYLEN * 2];
     unsigned char Pt[KEYLEN];
     unsigned char msg[] = "test rsa test";
     int ctlen2;
     int ptlen;
 
-    ctlen2 = public_enc(msg, Ct2, "public/10.10.0.118.pem");
+    ctlen2 = public_enc(msg, Ct2, "serv_key2.pem");
     BIO_dump_fp(stdout, Ct2, ctlen2);
-    
+    printf("%s\n", Ct2); 
     printf("===============================\n"); 
-    ptlen = private_dec(Ct2, Pt, "private/10.10.0.118.pem");
+    ptlen = private_dec(Ct2, Pt, "serv_key.pem");
     BIO_dump_fp(stdout, Pt, ptlen);
     printf("%s\n", Pt);
     return 0;
-}*/
+}
 
 int public_enc(unsigned char *msg, unsigned char *Ct, const char *filename) {
     
@@ -39,8 +39,8 @@ int public_enc(unsigned char *msg, unsigned char *Ct, const char *filename) {
     BIO_read_filename(keybio, filename);
     
     rsa = PEM_read_bio_RSA_PUBKEY(keybio, &rsa, NULL, NULL);
-    ctlen = RSA_public_encrypt(strlen(msg), msg, Ct, rsa, RSA_PKCS1_OAEP_PADDING);
-    
+    ctlen = RSA_public_encrypt(strlen((char *)msg), msg, Ct, rsa, RSA_PKCS1_OAEP_PADDING);
+    printf("%d\n", ctlen); 
     RSA_free(rsa);
     BIO_free(keybio);
     return ctlen;
@@ -57,6 +57,7 @@ int private_dec(unsigned char *Ct, unsigned char *Pt, const char *filename) {
     rsa = PEM_read_bio_RSAPrivateKey(keybio, &rsa, NULL, NULL);
     ptlen = RSA_private_decrypt(KEYLEN, Ct, Pt, rsa, RSA_PKCS1_OAEP_PADDING);
     
+    printf("%s\n", Pt);
     RSA_free(rsa);
     BIO_free(keybio);
     return ptlen;

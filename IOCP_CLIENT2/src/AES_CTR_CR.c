@@ -3,35 +3,32 @@
 #include <string.h>
 #include <openssl/evp.h>
 #include <openssl/err.h>
-#include "AES_CTR_keygen.h"
 
 int aes_ctr_encrypt(unsigned char *key, unsigned char *iv, unsigned char *pt, unsigned char **ct);
-int aes_ctr_decrypt(unsigned char *key, unsigned char *iv, unsigned char *ct, unsigned char **pt);
+int aes_ctr_decrypt(unsigned char *key, unsigned char *iv, int ct_len, unsigned char *ct, unsigned char **pt);
 
-int main(void) {
+/*int main(void) {
     unsigned char *key;
     unsigned char *iv;
 
     gen_aes_ctr_key(&key, &iv);
-
+    unsigned char ivs[] = "aaaa";
 
     char plaint[] = " test";
     //char *plain = plaint;
     char *cipher;
     char *pt;
 
-    aes_ctr_encrypt(key, iv, (unsigned char *)plaint, (unsigned char **)&cipher);
-    aes_ctr_decrypt(key, iv, (unsigned char *)cipher, (unsigned char **)&pt);
+    aes_ctr_encrypt(key, ivs, (unsigned char *)plaint, (unsigned char **)&cipher);
+    aes_ctr_decrypt(key, ivs, (unsigned char *)cipher, (unsigned char **)&pt);
     return 0;
-}
+}*/
 
 int aes_ctr_encrypt(unsigned char *key, unsigned char *iv, unsigned char *pt, unsigned char **ct) {
     int error;
     int ct_len = 0; 
     int num_bytes = 0;
     unsigned long err;
-    printf("%d\n", (int)strlen((char *)pt));
-    printf("hear\n");
     int pt_len = (int)strlen((char *)pt);
 
     const EVP_CIPHER *c = EVP_aes_128_ofb();
@@ -61,16 +58,14 @@ int aes_ctr_encrypt(unsigned char *key, unsigned char *iv, unsigned char *pt, un
         EVP_CIPHER_CTX_free(ctx);
         return 0;
     }
-    
+
     ct_len += num_bytes;
 
-    printf("%s\n", *ct);
-    printf("%d\n", ct_len);
     EVP_CIPHER_CTX_free(ctx);
-    return 1;
+    return num_bytes;
 }
 
-int aes_ctr_decrypt(unsigned char *key, unsigned char *iv, unsigned char *ct, unsigned char **pt) {
+int aes_ctr_decrypt(unsigned char *key, unsigned char *iv, int ct_len, unsigned char *ct, unsigned char **pt) {
     int error;
     int pt_len = 0;
     int num_bytes = 0;
@@ -94,7 +89,6 @@ int aes_ctr_decrypt(unsigned char *key, unsigned char *iv, unsigned char *ct, un
         return 0;
     }
     
-    int ct_len = (int)strlen((char *)ct);
     *pt = (unsigned char *)malloc(ct_len);
     
     error = EVP_DecryptUpdate(ctx, pt[pt_len], &num_bytes, &ct[pt_len],
@@ -107,12 +101,8 @@ int aes_ctr_decrypt(unsigned char *key, unsigned char *iv, unsigned char *ct, un
     }
     pt_len += num_bytes; 
     
-    *pt[num_bytes] = 0;
     
     EVP_CIPHER_CTX_free(ctx);
-    printf("cipher len : %d\n", ct_len);
-    printf("numbyte : %d\n", num_bytes);
-    printf("pt  : %s\n", *pt);
     return 1;    
 }
 
