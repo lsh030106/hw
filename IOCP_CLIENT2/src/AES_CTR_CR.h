@@ -6,3 +6,4 @@
 
 int aes_ctr_encrypt(unsigned char *key, unsigned char *iv, unsigned char *pt, unsigned char **ct);
 int aes_ctr_decrypt(unsigned char *key, unsigned char *iv, int ct_len, unsigned char *ct, unsigned char **pt);
+/*  */

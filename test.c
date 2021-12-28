@@ -11,6 +11,9 @@
 
 char test[] = "test test test test test test";
 
+void *p_rsa_crypto(void *arg);
+void *p_aes_crypto(void *arg);
+
 struct AesTest {
     int (* keygen) (unsigned char **, unsigned char **);
     int (* encrypt) (unsigned char *, unsigned char *, unsigned char *, unsigned char **);
@@ -24,116 +27,7 @@ struct RsaTest {
     int (* decrypt) (unsigned char *, unsigned char *, const char *);
 };
 
-void *p_aes_crypto(void *arg) {
-    pid_t pid = getpid();
-    pthread_t tid = pthread_self();
-    clock_t start, end;
-    float res;
-    unsigned char *key = NULL;
-    unsigned char *iv = NULL;
-    unsigned char *plain = NULL;
-    unsigned char *cipher = NULL;
-    int cplen = 0;
-    int i = 0;
 
-    struct AesTest *aes = (struct AesTest *)arg;
-    
-    start = clock();
-    aes->keygen(&key, &iv);
-
-    for (i = 0; i < 10000; i++) {
-        cplen = aes->encrypt(key, iv, test, &cipher);
-        aes->decrypt(key, iv, cplen, cipher, &plain);
-    }
-    
-    end = clock();
-    res = (float)(end - start)/CLOCKS_PER_SEC;
-    printf("%.5f\n", res);
-}
-
-/*int aes_crypto(void) {
-      clock_t start, end;
-      float res;
-      unsigned char *key = NULL;
-      unsigned char *iv = NULL;
-      unsigned char *plain;
-      unsigned char *cipher;
-      int cplen = 0;
-      int i = 0;
-  
-      
-      start = clock();
-      gen_aes_ctr_key(&key, &iv);
-
-      for (i; i < 10000; i++) {
-          cplen = 0;
-          
-          cplen = aes_ctr_encrypt(key, iv, test, &cipher);
-          aes_ctr_decrypt(key, iv, cplen, cipher, &plain);
-      }
-      
-      end = clock();
-      res = (float)(end - start)/CLOCKS_PER_SEC;
-      printf("AES : %.3f\n", res);
-
-      return 0;
- }*/
-
-
-void *p_rsa_crypto(void *arg) {
-    pid_t pid = getpid();
-    pthread_t tid = pthread_self();
-    clock_t start, end;
-    float res;
-    int i = 0;
-    unsigned char plain[256];
-    unsigned char cipher[256];
-
-    struct RsaTest *rsa = (struct RsaTest *)arg;
-    start = clock();
-    
-    rsa->keygen("test");
-    
-    for (i = 0; i < 10000; i++) {
-        rsa->encrypt(test, cipher, "public/test.pem");
-        rsa->decrypt(cipher, plain, "private/test.pem");
-    }
-
-    end - clock();
-    res = (float)(end - start)/CLOCKS_PER_SEC;
-    printf("%.5f\n", res);
-}
-
-/*int rsa_crypto(void) {
-      clock_t start, end;
-      float res;
-      int i = 0;
-      unsigned char plain[256];
-      unsigned char cipher[256];
-  
-      start = clock();
-  
-      make_key("test");
-  
-      for (i; i < 10000; i++) {
-          memset(plain, 0, sizeof(plain));
-          memset(cipher, 0, sizeof(cipher));
-          public_enc((unsigned char *)test, cipher, "public/test.pem");
-          private_dec(cipher, plain, "private/test.pem");
-      }
-  
-      end = clock();
-      res = (float)(end - start)/CLOCKS_PER_SEC;                                                                     
-      printf("RSA : %.3f\n", res);
-      return 0;
- }
-
-int main(void) {
-    aes_crypto();
-    rsa_crypto();
-    return 0;
-}
-*/
 int main(void) {
     struct AesTest *aes;
     struct RsaTest *rsa;
@@ -168,4 +62,53 @@ int main(void) {
     return 0;
 }
 
+void *p_aes_crypto(void *arg) {
+    pid_t pid = getpid();
+    pthread_t tid = pthread_self();
+    clock_t start, end;
+    float res;
+    unsigned char *key = NULL;
+    unsigned char *iv = NULL;
+    unsigned char *plain = NULL;
+    unsigned char *cipher = NULL;
+    int cplen = 0;
+    int i = 0;
 
+    struct AesTest *aes = (struct AesTest *)arg;
+    
+    start = clock();
+    aes->keygen(&key, &iv);
+
+    for (i = 0; i < 10000; i++) {
+        cplen = aes->encrypt(key, iv, test, &cipher);
+        aes->decrypt(key, iv, cplen, cipher, &plain);
+    }
+    
+    end = clock();
+    res = (float)(end - start)/CLOCKS_PER_SEC;
+    printf("%.5f\n", res);
+}
+
+void *p_rsa_crypto(void *arg) {
+    pid_t pid = getpid();
+    pthread_t tid = pthread_self();
+    clock_t start, end;
+    float res;
+    int i = 0;
+    unsigned char plain[256];
+    unsigned char cipher[256];
+
+    struct RsaTest *rsa = (struct RsaTest *)arg;
+    start = clock();
+    
+    rsa->keygen("test");
+    
+    for (i = 0; i < 10000; i++) {
+        rsa->encrypt(test, cipher, "public/test.pem");
+        rsa->decrypt(cipher, plain, "private/test.pem");
+    }
+
+    end - clock();
+    res = (float)(end - start)/CLOCKS_PER_SEC;
+    printf("%.5f\n", res);
+}
