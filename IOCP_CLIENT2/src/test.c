@@ -29,8 +29,11 @@ struct RsaTest {
 
 
 int main(void) {
-    struct AesTest *aes;
-    struct RsaTest *rsa;
+    struct AesTest *aes = NULL;
+    struct RsaTest *rsa = NULL;
+    
+    memset(aes, 0, sizeof(*aes));
+    memset(rsa, 0, sizeof(*rsa));
 
     aes->keygen = gen_aes_ctr_key;
     aes->encrypt = aes_ctr_encrypt;
@@ -63,8 +66,6 @@ int main(void) {
 }
 
 void *p_aes_crypto(void *arg) {
-    pid_t pid = getpid();
-    pthread_t tid = pthread_self();
     clock_t start, end;
     float res;
     unsigned char *key = NULL;
@@ -80,18 +81,18 @@ void *p_aes_crypto(void *arg) {
     aes->keygen(&key, &iv);
 
     for (i = 0; i < 10000; i++) {
-        cplen = aes->encrypt(key, iv, test, &cipher);
+        cplen = aes->encrypt(key, iv, (unsigned char *)test, &cipher);
         aes->decrypt(key, iv, cplen, cipher, &plain);
     }
     
     end = clock();
     res = (float)(end - start)/CLOCKS_PER_SEC;
     printf("%.5f\n", res);
+
+    return 0;
 }
 
 void *p_rsa_crypto(void *arg) {
-    pid_t pid = getpid();
-    pthread_t tid = pthread_self();
     clock_t start, end;
     float res;
     int i = 0;
@@ -104,11 +105,12 @@ void *p_rsa_crypto(void *arg) {
     rsa->keygen("test");
     
     for (i = 0; i < 10000; i++) {
-        rsa->encrypt(test, cipher, "public/test.pem");
+        rsa->encrypt((unsigned char*)test, cipher, "public/test.pem");
         rsa->decrypt(cipher, plain, "private/test.pem");
     }
 
-    end - clock();
+    end = clock();
     res = (float)(end - start)/CLOCKS_PER_SEC;
     printf("%.5f\n", res);
+    return 0;
 }
