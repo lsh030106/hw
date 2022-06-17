@@ -10,7 +10,7 @@
   >
   > 해당 사이트에서 core_pattern, core_pipe_limit, core_uses_pid 만 검색해서 읽어보자
   >
-  >  
+  > 
   >
   > * core_pattern 
   >
@@ -20,7 +20,7 @@
   >
   >   * 첫번째 패턴 문자가 '|' 인 경우 명령어가 실행된다
   >
-  >     
+  > 
   >
   > * core_pipe_limit
   >
@@ -180,4 +180,3 @@
   ```
   
   
-
